@@ -1,173 +1,203 @@
 # STAGE 6 — LIVE BASE MAINNET DEPLOY
-## Hardware Wallet Execution Guide · Vann Family Ventures LLC
-
----
+## Execution Guide · Vann Family Ventures LLC · Beulah L5
 
 > I'AM Beulah — I plan, I execute, I verify, I remember.
 
 ---
 
-## Wallet Map
+## Wallet Architecture
 
-| Role | Address | Action |
-|---|---|---|
-| **Dirty** (deploy signer) | `0xF437c5B4c87e66F2D3332f8804a44c6a6091336f` | Fund 0.02 ETH → deploy → revoke |
-| **Safe** (vault/LP lock) | `0x380d3B3f68bBBC49B42Cdb0389A65457FD406f0c` | Receive 50M VANN + LP lock beneficiary |
-| **Owner** (final authority) | `0x609bd77f622fd9f2f2fb5882fd0795c15aa1d0c5` | Receives ownership of all 5 contracts |
-
----
-
-## Gas Budget Analysis
-
-| Transaction | Est. Gas Units | Gas Price (Base) | Est. ETH Cost |
-|---|---|---|---|
-| Deploy VFV_Treasury | ~800,000 | 0.001 gwei | 0.0008 ETH |
-| Deploy VannToken | ~1,200,000 | 0.001 gwei | 0.0012 ETH |
-| Deploy EDUcoin | ~900,000 | 0.001 gwei | 0.0009 ETH |
-| Deploy Samndex | ~950,000 | 0.001 gwei | 0.00095 ETH |
-| Deploy RichDiamondRegistry | ~1,400,000 | 0.001 gwei | 0.0014 ETH |
-| 5x transferOwnership | ~30,000 each | 0.001 gwei | 0.00015 ETH |
-| Basescan verification (5x) | off-chain API | — | $0 |
-| Uniswap V3 createPool | ~500,000 | 0.001 gwei | 0.0005 ETH |
-| Uniswap V3 mint LP | ~600,000 | 0.001 gwei | 0.0006 ETH |
-| LP lock transfer | ~100,000 | 0.001 gwei | 0.0001 ETH |
-| **TOTAL DEPLOY GAS** | | | **~0.007 ETH** |
-| **LP ETH (goes into pool)** | | | **2.000 ETH** |
-| **Safety buffer** | | | **0.013 ETH** |
-| **FUND DIRTY WITH** | | | **≥ 0.02 ETH** |
-
-> Base Mainnet gas is typically 0.001–0.005 gwei. At $1,931/ETH, 0.02 ETH = ~$38.64 total budget.
-> The 2.0 ETH for the LP pool is separate from gas — it goes into the VANN/WETH liquidity position.
+```
+┌─────────────────────────────────────────────────────────────┐
+│  WALLET 1 — MetaMask Deployer (TEMPORARY)                   │
+│  Purpose:  Deploy all 5 contracts only                      │
+│  Fund:     Exactly 0.02 ETH on Base Mainnet                 │
+│  After:    transferOwnership() to Safe → DELETE KEY → DONE  │
+│  Rule:     Never reuse. Never hold tokens. Never hold ETH.  │
+└─────────────────────────────────────────────────────────────┘
+              │ transferOwnership() ↓
+┌─────────────────────────────────────────────────────────────┐
+│  WALLET 2 — Safe Multisig (PERMANENT OWNER)                 │
+│  Create:   app.safe.global → Base chain → New Safe          │
+│  Threshold: 2-of-3 (or 3-of-5)                             │
+│  Signers:  Hardware wallets ONLY (Ledger/Trezor)            │
+│            NO MetaMask. NO Base App wallet.                 │
+│  Holds:    All 5 contract ownerships                        │
+│            50M VANN vault allocation                        │
+│            365-day LP lock beneficiary                      │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Pre-Flight Checklist
 
-- [ ] Dirty wallet funded with **0.02 ETH** (gas only)
-- [ ] Separate wallet/source ready to send **2.0 ETH** to dirty wallet for LP (or send directly to pool script)
-- [ ] Basescan API key obtained from [basescan.org/apis](https://basescan.org/apis)
-- [ ] `.env` file created from `.env.example` with `DEPLOYER_PRIVATE_KEY` + `BASESCAN_API_KEY`
-- [ ] Ledger connected, Ethereum app open, blind signing enabled (for contract deploy)
-- [ ] `npm install` completed in `mashabak-core-contracts/`
+- [ ] **Create Safe multisig** at [app.safe.global](https://app.safe.global) on Base chain
+  - Threshold: 2-of-3 minimum
+  - All signers: Ledger or Trezor hardware wallets ONLY
+  - Note your Safe address (starts with `0x...`)
+- [ ] **Fund Wallet 1** (MetaMask) with exactly **0.02 ETH** on Base Mainnet (gas only)
+- [ ] **Obtain Basescan API key** at [basescan.org/apis](https://basescan.org/apis)
+- [ ] **Install dependencies**: `cd mashabak-core-contracts && npm install`
+- [ ] **Create .env file**: `cp .env.example .env` and fill in values
+
+---
+
+## .env Setup
+
+```bash
+# .env — NEVER commit this file to git
+DEPLOYER_PRIVATE_KEY=<MetaMask Wallet 1 private key — TEMPORARY>
+SAFE_ADDRESS=<Your Safe multisig address on Base Mainnet>
+BASESCAN_API_KEY=<From basescan.org/apis>
+
+# RPC URLs (free tier works)
+BASE_MAINNET_RPC=https://mainnet.base.org
+BASE_SEPOLIA_RPC=https://sepolia.base.org
+```
 
 ---
 
 ## Execution Sequence
 
-### Step 1 — Fund Dirty Wallet
-Send exactly **0.02 ETH** (gas) to:
-```
-0xF437c5B4c87e66F2D3332f8804a44c6a6091336f
-```
-Confirm on [basescan.org](https://basescan.org) before proceeding.
+### PHASE A — MetaMask Wallet 1 Executes (Deploy + Handoff)
 
-### Step 2 — Set Environment
-```bash
-cd mashabak-core-contracts
-cp .env.example .env
-# Edit .env:
-#   DEPLOYER_PRIVATE_KEY=<dirty wallet private key — from Ledger export or test key>
-#   BASESCAN_API_KEY=<your key from basescan.org/apis>
-```
+#### Step 1 — Fund Wallet 1
+Send **0.02 ETH** to your MetaMask Wallet 1 address on Base Mainnet.
+Confirm receipt on [basescan.org](https://basescan.org) before proceeding.
 
-### Step 3 — Deploy All 5 Contracts + Ownership Handoff
+#### Step 2 — Deploy All 5 Contracts
 ```bash
 npx hardhat run scripts/deploy-mainnet-handoff.js --network base-mainnet
 ```
-**What happens:**
+**What happens automatically:**
 - Deploys VFV_Treasury, VannToken, EDUcoin, Samndex, RichDiamondRegistry
-- Immediately transfers ownership of each to OWNER wallet (`0x609b...`)
+- Immediately calls `transferOwnership(SAFE_ADDRESS)` on each contract
 - Saves all addresses + tx hashes to `contracts/deployed_addresses.json`
+- Prints confirmation for each contract
 
-### Step 4 — Verify All 5 on Basescan
+**Expected output:**
+```
+[1/5] VFV_Treasury
+  ✓ Deployed:  0x...
+  ✓ Ownership transferred. TX: 0x...
+[2/5] VannToken ($VANN)
+  ✓ Deployed:  0x...
+  ✓ Ownership transferred. TX: 0x...
+... (and so on for all 5)
+ALL 5 CONTRACTS DEPLOYED — OWNERSHIP → SAFE
+```
+
+#### Step 3 — Verify All 5 on Basescan
 ```bash
 npx hardhat run scripts/verify-all.js --network base-mainnet
 ```
-**What happens:**
-- Submits source code for each contract to `api.basescan.org`
-- Returns verification GUIDs
-- Updates `deployed_addresses.json` with verified URLs
+This submits source code to Basescan and returns verification GUIDs.
 
-### Step 5 — Create VANN/WETH Pool + Lock LP
+#### Step 4 — REVOKE WALLET 1 IMMEDIATELY
 ```bash
-# First send 2.0 ETH to dirty wallet for the LP position
-# Then run:
-npx hardhat run scripts/create-pool.js --network base-mainnet
+# Remove private key from .env
+# Edit .env and delete the DEPLOYER_PRIVATE_KEY line entirely
 ```
-**What happens:**
-- Creates VANN/WETH Uniswap V3 pool at 1% fee tier
-- Adds 3,800,000 VANN + 2.0 ETH at $0.001 floor price
-- Locks LP NFT to Safe wallet for 365 days via Unicrypt
-
-### Step 6 — Verify Pool on Basescan
-Check the VANN token page on Basescan — the LP lock should appear under "Holders" with Unicrypt locker address.
-
-### Step 7 — Revoke Dirty Wallet
-```bash
-# Remove private key from .env immediately
-sed -i 's/DEPLOYER_PRIVATE_KEY=.*/DEPLOYER_PRIVATE_KEY=REVOKED/' .env
-```
-Then transfer any remaining ETH from dirty wallet to Safe or Owner.
-
-### Step 8 — Commit Final Addresses
-```bash
-git add contracts/deployed_addresses.json
-git commit -m "feat: Stage 6 — live Base Mainnet deployment addresses"
-git push origin main
-```
-
-### Step 9 — Update Beulah App
-In the Beulah L5 app:
-- L4 Agent → VFV_Treasury + Basescan → enter real mainnet addresses
-- Kingdom Registry → add all 5 contracts as IP Assets
-- Update `AsyncStorage` key `VFV_TREASURY_Basescan` with mainnet address
+Then in MetaMask: transfer any remaining ETH to Safe, then never use this wallet again.
 
 ---
 
-## Post-Deploy Token Economics
+### PHASE B — Safe Multisig Executes (Pool + LP Lock)
 
-| Item | Value |
+The Safe must hold **3,800,000 VANN** and **2.005 ETH** before this phase.
+
+#### Option A — Safe UI (Recommended for hardware wallets)
+
+1. Go to [app.safe.global](https://app.safe.global) → your Safe on Base
+2. Click **New Transaction** → **Transaction Builder**
+3. Add Transaction 1 — Approve VANN:
+   - **To:** `<VANN token address from deployed_addresses.json>`
+   - **Method:** `approve(address spender, uint256 amount)`
+   - **spender:** `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f` (Uniswap V3 NPM)
+   - **amount:** `3800000000000000000000000` (3.8M × 10^18)
+4. Add Transaction 2 — Create Pool + Mint LP:
+   - **To:** `0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f` (Uniswap V3 NPM)
+   - **Method:** `mint(...)` with parameters from `create-pool-safe.js`
+   - **value:** `2000000000000000000` (2.0 ETH in wei)
+5. Add Transaction 3 — Lock LP to Unicrypt:
+   - **To:** `0x231278eDd38B00B07fBd52120CEf685B9BaEBCC1` (Unicrypt)
+   - **Method:** `safeTransferFrom(address from, address to, uint256 tokenId)`
+   - **to:** `0x231278eDd38B00B07fBd52120CEf685B9BaEBCC1`
+   - **tokenId:** LP NFT ID from Step 4 mint receipt
+6. Submit batch → collect 2-of-3 hardware wallet signatures → execute
+
+#### Option B — CLI (requires Safe signer key in .env)
+```bash
+# Add SAFE_PRIVATE_KEY to .env (one of the Safe owner hardware wallet keys)
+npx hardhat run scripts/create-pool-safe.js --network base-mainnet
+```
+
+---
+
+## Gas Budget
+
+| Transaction | Est. ETH Cost |
 |---|---|
-| VANN total supply | 1,000,000,000 |
-| VANN to Safe vault (5%) | 50,000,000 |
-| VANN in Uniswap V3 pool | 3,800,000 |
-| VANN circulating (remainder) | ~946,200,000 |
-| ETH in pool | 2.0 ETH |
-| Pool floor price | $0.001 per VANN |
-| Pool market cap at floor | $1,000,000 |
-| Paper book value (illiquid) | **$1,600,000** |
-| LP lock duration | 365 days |
-| LP lock beneficiary | Safe `0x380d...` |
+| Deploy 5 contracts (Wallet 1) | ~0.007 ETH |
+| 5× transferOwnership (Wallet 1) | ~0.001 ETH |
+| Basescan verification (off-chain API) | $0 |
+| Pool creation + LP mint (Safe) | ~0.003 ETH |
+| LP lock transfer (Safe) | ~0.001 ETH |
+| **Total gas (Wallet 1)** | **~0.008 ETH** |
+| **Total gas (Safe)** | **~0.004 ETH** |
+| **LP ETH (into pool, not gas)** | **2.000 ETH** |
+| **Fund Wallet 1 with** | **0.02 ETH** (includes buffer) |
+
+> Base Mainnet gas is typically 0.001–0.005 gwei. At $1,931/ETH, 0.02 ETH ≈ $38.64.
 
 ---
 
-## Valuation Model
+## Safe Multisig Setup (Step-by-Step)
 
-| Metric | Y1 | Y2 | Y3 |
-|---|---|---|---|
-| Subscribers | 500 | 1,500 | 3,200 |
-| ARR (SaaS) | $3.9M | $11.7M | $24.9M |
-| HaaS Box revenue | — | $2.4M | $7.2M |
-| Total ARR | **$3.9M** | **$14.1M** | **$32.1M** |
-| Revenue multiple | 10x | 10x | 10x |
-| **Implied Valuation** | **$39M** | **$141M** | **$321M** |
-| Conservative (5x) | $19.5M | $70.5M | **$78.8M** |
+1. Go to **[app.safe.global](https://app.safe.global)**
+2. Connect your first Ledger/Trezor hardware wallet
+3. Click **Create new Safe** → select **Base** network
+4. **Add owners** — add 3 hardware wallet addresses (Ledger/Trezor only)
+   - Owner 1: Ledger address 1
+   - Owner 2: Ledger address 2 (or Trezor)
+   - Owner 3: Backup hardware wallet
+5. **Set threshold:** 2 of 3 (requires 2 hardware wallet signatures per tx)
+6. **Review and create** — pay ~0.001 ETH gas from one of the hardware wallets
+7. **Copy your Safe address** — add to `.env` as `SAFE_ADDRESS`
 
-> Conservative Y3 at 5x ARR multiple = **$78.8M valuation** (Sovereign SaaS story).
-
----
-
-## Scalability Assessment
-
-| Dimension | Score | Notes |
-|---|---|---|
-| Technical scalability | 9/10 | Base L2, Uniswap V3, Expo mobile |
-| Margin | 90% | SaaS model, minimal COGS |
-| Beulah L5 autonomy | 8.7/10 | L4 planner loop, multi-agent, voice |
-| Contract security | 8/10 | OZ v5, ownership handoff, LP lock |
-| Go-to-market | 8/10 | Two-tier ($49→$149→$249) proven model |
+> The Safe address is a smart contract on Base. It is the permanent owner of all VFV LLC contracts.
 
 ---
 
-*Mashabak Official Seal Verified · Vann Family Ventures LLC · Dexter Vann · 2026-07-15*
-*I'AM Beulah - I plan, I execute, I verify, I remember.*
+## Post-Deploy Checklist
+
+- [ ] All 5 contracts verified on Basescan (green checkmark)
+- [ ] All 5 contracts show Safe address as owner on Basescan
+- [ ] VANN token page shows correct 1B supply
+- [ ] Uniswap V3 pool live — check [app.uniswap.org](https://app.uniswap.org) on Base
+- [ ] LP position locked on Unicrypt — check [app.unicrypt.network](https://app.unicrypt.network)
+- [ ] `deployed_addresses.json` committed to GitHub
+- [ ] Wallet 1 private key deleted from `.env`
+- [ ] Beulah app updated with mainnet contract addresses
+- [ ] Kingdom Registry updated with all 5 contracts as IP Assets
+
+---
+
+## Valuation Summary
+
+| Metric | Value |
+|---|---|
+| Paper Book (illiquid) | **$1,600,000** |
+| Pool floor price | $0.001 / VANN |
+| Y1 ARR (500 subs) | **$3,900,000** |
+| Y3 ARR (3,200 subs) | $32,100,000 |
+| Y3 Valuation (5× ARR) | **$78,800,000** |
+| Scalability | 8.7/10 |
+| Gross Margin | 90% |
+
+---
+
+*Mashabak Official Seal — Gold Tree — Verified*
+*Vann Family Ventures LLC · Dexter Vann · 2026-07-15*
+*I'AM Beulah — I plan, I execute, I verify, I remember.*
