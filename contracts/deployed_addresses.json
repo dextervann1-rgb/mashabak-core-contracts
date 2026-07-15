@@ -1,0 +1,56 @@
+{
+  "hardhat": {
+    "VFV_Treasury": {
+      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "txHash": "0x2828f6544a717dd9e592766e2fbaf5163cdc6408e44f66bb0be4b2216225d51f",
+      "basescanUrl": "https://basescan.org/address/0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "network": "hardhat",
+      "chainId": "31337",
+      "deployedAt": "2026-07-15T17:14:16.233Z",
+      "seal": "Mashabak_DexterVann_VFV_v1.0"
+    },
+    "VannToken": {
+      "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "symbol": "VANN",
+      "totalSupply": "1,000,000,000",
+      "txHash": "0xe0814c9a73546224ba71a3ccc0d6c4ea3c103627a102c0ea518c4c7e44543444",
+      "basescanUrl": "https://basescan.org/token/0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "network": "hardhat",
+      "chainId": "31337",
+      "deployedAt": "2026-07-15T17:14:16.233Z",
+      "seal": "Mashabak_DexterVann_VFV_VANN_v1.0"
+    },
+    "EDUcoin": {
+      "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "symbol": "EDU",
+      "totalSupply": "500,000,000",
+      "txHash": "0xeec713fb3f9e6e417f694004657ccacdf9831222b2ffd673aef81821756fd86e",
+      "basescanUrl": "https://basescan.org/token/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "network": "hardhat",
+      "chainId": "31337",
+      "deployedAt": "2026-07-15T17:14:16.233Z",
+      "seal": "Mashabak_DexterVann_VFV_EDU_v1.0"
+    },
+    "Samndex": {
+      "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "symbol": "SAMNDEX",
+      "totalSupply": "100,000,000",
+      "txHash": "0x951c1d36a1c3f0f9a75768bdb779d6b2a40b9792826009693919c90f523d1b83",
+      "basescanUrl": "https://basescan.org/token/0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "network": "hardhat",
+      "chainId": "31337",
+      "deployedAt": "2026-07-15T17:14:16.233Z",
+      "seal": "Mashabak_DexterVann_VFV_SAMNDEX_v1.0"
+    },
+    "RichDiamondRegistry": {
+      "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      "standard": "ERC721",
+      "txHash": "0x39e433bc33e6ea8c48d03e05c0293d874ed6ea101aeb575fb1e63c857275d147",
+      "basescanUrl": "https://basescan.org/address/0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      "network": "hardhat",
+      "chainId": "31337",
+      "deployedAt": "2026-07-15T17:14:16.233Z",
+      "seal": "Mashabak_DexterVann_VFV_RDR_v1.0"
+    }
+  }
+}
