@@ -52,5 +52,59 @@
       "deployedAt": "2026-07-15T17:14:16.233Z",
       "seal": "Mashabak_DexterVann_VFV_RDR_v1.0"
     }
+  },
+  "base-sepolia": {
+    "VFV_Treasury": {
+      "address": "0x2c9e45C392D21077781c59eE5b8833bDA305Dc77",
+      "txHash": "0x44dfb67d09212bcd6519ec42cc196270e4eca2d1598a3b30d5fd8f5ceaf95a80",
+      "basescanUrl": "https://basescan.org/address/0x2c9e45C392D21077781c59eE5b8833bDA305Dc77",
+      "network": "base-sepolia",
+      "chainId": "84532",
+      "deployedAt": "2026-07-15T23:04:03.065Z",
+      "seal": "Mashabak_DexterVann_VFV_v1.0"
+    },
+    "VannToken": {
+      "address": "0xB9C1d70ceCF690A99ea56BC83D7211B7EED248b2",
+      "symbol": "VANN",
+      "totalSupply": "1,000,000,000",
+      "txHash": "0xd4f90267258c916737dd9ad8f655eaed827bc037ab8698ac444b3efff9ea598a",
+      "basescanUrl": "https://basescan.org/token/0xB9C1d70ceCF690A99ea56BC83D7211B7EED248b2",
+      "network": "base-sepolia",
+      "chainId": "84532",
+      "deployedAt": "2026-07-15T23:04:03.065Z",
+      "seal": "Mashabak_DexterVann_VFV_VANN_v1.0"
+    },
+    "EDUcoin": {
+      "address": "0x16C18CE37aD7cd42B72f13da3e0C84543Ab6c66A",
+      "symbol": "EDU",
+      "totalSupply": "500,000,000",
+      "txHash": "0xeee134f68c9c83354c354ca7322f094f771594a15c0247ade6d0497ef84d27cc",
+      "basescanUrl": "https://basescan.org/token/0x16C18CE37aD7cd42B72f13da3e0C84543Ab6c66A",
+      "network": "base-sepolia",
+      "chainId": "84532",
+      "deployedAt": "2026-07-15T23:04:03.065Z",
+      "seal": "Mashabak_DexterVann_VFV_EDU_v1.0"
+    },
+    "Samndex": {
+      "address": "0x4859981501BDAD21CD1a077d68A27851c885BeB4",
+      "symbol": "SAMNDEX",
+      "totalSupply": "100,000,000",
+      "txHash": "0x5947dc582cfaa76e2042c9f9023a04d58f58664d67a852c9695a846629ffc61c",
+      "basescanUrl": "https://basescan.org/token/0x4859981501BDAD21CD1a077d68A27851c885BeB4",
+      "network": "base-sepolia",
+      "chainId": "84532",
+      "deployedAt": "2026-07-15T23:04:03.065Z",
+      "seal": "Mashabak_DexterVann_VFV_SAMNDEX_v1.0"
+    },
+    "RichDiamondRegistry": {
+      "address": "0x12Bf242c2d1469D4D25BC8D1102562dE671190B2",
+      "standard": "ERC721",
+      "txHash": "0x13fce99f8bd36cb02be2a6b2d701c3cf2e991438c70a33a0a76c9410b21d6daa",
+      "basescanUrl": "https://basescan.org/address/0x12Bf242c2d1469D4D25BC8D1102562dE671190B2",
+      "network": "base-sepolia",
+      "chainId": "84532",
+      "deployedAt": "2026-07-15T23:04:03.065Z",
+      "seal": "Mashabak_DexterVann_VFV_RDR_v1.0"
+    }
   }
 }
