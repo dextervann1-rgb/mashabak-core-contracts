@@ -10,14 +10,19 @@
     "deploy:mainnet": "hardhat run scripts/deploy-all.js --network base-mainnet",
     "node": "hardhat node",
     "verify:sepolia": "hardhat run scripts/verify-all.js --network base-sepolia",
-    "verify:mainnet": "hardhat run scripts/verify-all.js --network base-mainnet"
+    "verify:mainnet": "hardhat run scripts/verify-all.js --network base-mainnet",
+    "upgrade:testnet": "hardhat run scripts/upgrade-proxy.js --network bscTestnet",
+    "validate:upgrade:testnet": "hardhat run scripts/validate-upgrade.js --network bscTestnet",
+    "deploy:proxy:testnet": "hardhat run scripts/deploy-and-verify.js --network bscTestnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/hardhat-upgrades": "^3.9.1",
     "hardhat": "^2.28.6"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.6.1",
+    "@openzeppelin/contracts-upgradeable": "^5.6.1",
     "dotenv": "^16.6.1"
   }
 }

@@ -1,0 +1,97 @@
+name: Upgrade and Verify
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    name: Validate, Upgrade, and Verify Proxy
+    runs-on: ubuntu-latest
+    environment: testnet
+
+    env:
+      NETWORK: bscTestnet
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Validate Required Configuration
+        env:
+          PROXY_ADDRESS: ${{ secrets.BSC_TESTNET_PROXY_ADDRESS }}
+          BSC_TESTNET_RPC: ${{ secrets.BSC_TESTNET_RPC }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          [[ "$PROXY_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$ ]] || {
+            echo "BSC_TESTNET_PROXY_ADDRESS is missing or invalid." >&2
+            exit 1
+          }
+          [[ -n "$BSC_TESTNET_RPC" ]] || {
+            echo "BSC_TESTNET_RPC is not configured." >&2
+            exit 1
+          }
+          [[ -n "$DEPLOYER_PRIVATE_KEY" ]] || {
+            echo "DEPLOYER_PRIVATE_KEY is not configured." >&2
+            exit 1
+          }
+
+      - name: Compile Contracts
+        run: npx hardhat compile
+
+      - name: Run Upgrade Safety Tests
+        run: npx hardhat test test/upgrade.test.js
+
+      - name: Validate Upgrade Storage Layout
+        env:
+          PROXY_ADDRESS: ${{ secrets.BSC_TESTNET_PROXY_ADDRESS }}
+          BSC_TESTNET_RPC: ${{ secrets.BSC_TESTNET_RPC }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: npx hardhat run scripts/validate-upgrade.js --network "$NETWORK"
+
+      - name: Run Proxy Upgrade
+        id: upgrade
+        env:
+          PROXY_ADDRESS: ${{ secrets.BSC_TESTNET_PROXY_ADDRESS }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          BSC_TESTNET_RPC: ${{ secrets.BSC_TESTNET_RPC }}
+        run: |
+          set -euo pipefail
+          npx hardhat run scripts/upgrade-proxy.js --network "$NETWORK" 2>&1 | tee upgrade.log
+
+          proxy_address="$(sed -nE 's/.*Proxy address: (0x[a-fA-F0-9]{40}).*/\1/p' upgrade.log | tail -n 1)"
+          implementation_address="$(sed -nE 's/.*New implementation address: (0x[a-fA-F0-9]{40}).*/\1/p' upgrade.log | tail -n 1)"
+
+          [[ "$proxy_address" =~ ^0x[a-fA-F0-9]{40}$ ]] || exit 1
+          [[ "$implementation_address" =~ ^0x[a-fA-F0-9]{40}$ ]] || exit 1
+          [[ "${PROXY_ADDRESS,,}" == "${proxy_address,,}" ]] || {
+            echo "Proxy address changed unexpectedly." >&2
+            exit 1
+          }
+
+          echo "proxy_address=$proxy_address" >> "$GITHUB_OUTPUT"
+          echo "implementation_address=$implementation_address" >> "$GITHUB_OUTPUT"
+
+      - name: Verify New Implementation on BscScan
+        env:
+          BSCSCAN_API_KEY: ${{ secrets.BSCSCAN_API_KEY }}
+          BSC_TESTNET_RPC: ${{ secrets.BSC_TESTNET_RPC }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          IMPLEMENTATION_ADDRESS: ${{ steps.upgrade.outputs.implementation_address }}
+        run: |
+          set -euo pipefail
+          [[ -n "$BSCSCAN_API_KEY" ]] || exit 1
+          sleep 15
+          npx hardhat verify --network "$NETWORK" "$IMPLEMENTATION_ADDRESS"
