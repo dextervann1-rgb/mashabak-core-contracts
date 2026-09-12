@@ -2,6 +2,8 @@ name: Upgrade and Verify
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types: [auto_upgrade_requested]
 
 permissions:
   contents: read
