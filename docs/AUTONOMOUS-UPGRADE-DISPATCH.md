@@ -1,22 +1,22 @@
 # Secure Autonomous Upgrade Dispatch
 
-The upgrade workflow accepts two triggers:
+The upgrade workflow is **Base-only** and accepts two triggers:
 
 - `workflow_dispatch` for manual execution from the GitHub Actions interface.
 - `repository_dispatch` with event type `auto_upgrade_requested` for an authenticated server-side application request.
 
-The workflow remains gated by the `testnet` GitHub Environment and runs validation, compilation, upgrade tests, storage-layout validation, the proxy upgrade, and BscScan verification before completing.
+The workflow targets **Base Sepolia** (`base-sepolia`, chain ID `84532`) and runs compilation, upgrade tests, storage-layout validation, the proxy upgrade, and BaseScan verification. It is protected by the `base-sepolia` GitHub Environment.
 
 ## Required GitHub configuration
 
-Configure these secrets in the repository's `testnet` Environment:
+Configure these secrets in the repository's `base-sepolia` Environment:
 
 | Secret | Purpose |
 | --- | --- |
-| `BSC_TESTNET_PROXY_ADDRESS` | Existing transparent proxy address |
-| `BSC_TESTNET_RPC` | BSC Testnet RPC endpoint |
-| `DEPLOYER_PRIVATE_KEY` | Dedicated testnet upgrade wallet |
-| `BSCSCAN_API_KEY` | BscScan verification key |
+| `BASE_SEPOLIA_PROXY_ADDRESS` | Existing Base Sepolia transparent proxy address |
+| `BASE_SEPOLIA_RPC` | Base Sepolia RPC endpoint |
+| `DEPLOYER_PRIVATE_KEY` | Dedicated Base Sepolia upgrade wallet |
+| `BASESCAN_API_KEY` | BaseScan verification key |
 
 The dispatch token is **not** a repository secret. It belongs in the server-side application that is authorized to request a workflow run.
 
@@ -24,7 +24,7 @@ The dispatch token is **not** a repository secret. It belongs in the server-side
 
 Use a fine-grained GitHub token owned by an appropriate service identity. Grant only the minimum repository permission required to dispatch workflows. Do not use a broad classic token when a fine-grained token is available.
 
-Store the token only as a server-side environment variable, for example:
+Store the token only as a server-side environment variable:
 
 ```dotenv
 GITHUB_DISPATCH_TOKEN=replace-with-a-server-side-token
@@ -43,7 +43,6 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   // Replace this with the application's real session and role check.
-  // Do not dispatch an upgrade until the caller is authorized as an admin.
   const authorization = request.headers.get("authorization");
   const expected = process.env.INTERNAL_DEPLOYMENT_AUTH_TOKEN;
 
@@ -74,9 +73,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         event_type: "auto_upgrade_requested",
-        client_payload: {
-          requested_by: "authorized-admin",
-        },
+        client_payload: { requested_by: "authorized-admin" },
       }),
       cache: "no-store",
     }
@@ -85,35 +82,26 @@ export async function POST(request: Request) {
   if (!response.ok) {
     console.error("GitHub dispatch failed:", await response.text());
     return NextResponse.json(
-      { error: "Failed to dispatch upgrade workflow." },
+      { error: "Failed to dispatch Base upgrade workflow." },
       { status: 502 }
     );
   }
 
   return NextResponse.json({
     success: true,
-    message: "Upgrade workflow dispatched for validation and execution.",
+    message: "Base Sepolia upgrade workflow dispatched.",
   });
 }
 ```
 
-The browser should call the consuming application's `/api/deploy` route, never GitHub's API directly:
-
-```ts
-await fetch("/api/deploy", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${internalAdminToken}`,
-  },
-});
-```
+The browser should call the consuming application's `/api/deploy` route, never GitHub directly.
 
 ## Direct API test
 
 From a secure server terminal only:
 
 ```bash
-curl -X POST \
+curl --fail-with-body -X POST \
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer $GITHUB_DISPATCH_TOKEN" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -122,8 +110,8 @@ curl -X POST \
   -d '{"event_type":"auto_upgrade_requested"}'
 ```
 
-A successful dispatch returns HTTP `204`. Dispatching does not bypass the workflow's tests, storage validation, environment protection, or required GitHub secrets.
+A successful dispatch returns HTTP `204`.
 
-## Mainnet safety
+## Base Mainnet safety
 
-This workflow targets BSC Testnet. Do not change it to mainnet merely by changing the network name. Use a separate protected `mainnet` environment, a distinct proxy secret, a dedicated mainnet workflow, and required reviewers. For production governance, prefer a Safe multisig or TimelockController as the ProxyAdmin owner so an application endpoint cannot unilaterally upgrade the proxy.
+Base Mainnet uses `base-mainnet` and chain ID `8453`. Do not switch the Sepolia workflow by changing one string. Use a separate protected `base-mainnet` GitHub Environment, a distinct `BASE_MAINNET_PROXY_ADDRESS` secret, `BASE_MAINNET_RPC`, and required reviewers. For production governance, prefer a Safe multisig or TimelockController as the ProxyAdmin owner so an application endpoint cannot unilaterally upgrade the proxy.

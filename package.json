@@ -11,9 +11,9 @@
     "node": "hardhat node",
     "verify:sepolia": "hardhat run scripts/verify-all.js --network base-sepolia",
     "verify:mainnet": "hardhat run scripts/verify-all.js --network base-mainnet",
-    "upgrade:testnet": "hardhat run scripts/upgrade-proxy.js --network bscTestnet",
-    "validate:upgrade:testnet": "hardhat run scripts/validate-upgrade.js --network bscTestnet",
-    "deploy:proxy:testnet": "hardhat run scripts/deploy-and-verify.js --network bscTestnet"
+    "upgrade:sepolia": "hardhat run scripts/upgrade-proxy.js --network base-sepolia",
+    "validate:upgrade:sepolia": "hardhat run scripts/validate-upgrade.js --network base-sepolia",
+    "deploy:proxy:sepolia": "hardhat run scripts/deploy-and-verify.js --network base-sepolia"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

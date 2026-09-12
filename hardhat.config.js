@@ -14,7 +14,6 @@ function getAccounts() {
 
 const accounts = getAccounts();
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || "";
-const BSCSCAN_API_KEY = process.env.BSCSCAN_API_KEY || "";
 
 module.exports = {
   solidity: {
@@ -40,24 +39,12 @@ module.exports = {
       accounts,
     },
 
-    bscTestnet: {
-      url: process.env.BSC_TESTNET_RPC || "",
-      chainId: 97,
-      accounts,
-    },
-    bscMainnet: {
-      url: process.env.BSC_MAINNET_RPC || "",
-      chainId: 56,
-      accounts,
-    },
   },
 
   etherscan: {
     apiKey: {
       "base-mainnet": BASESCAN_API_KEY,
       "base-sepolia": BASESCAN_API_KEY,
-      bscTestnet: BSCSCAN_API_KEY,
-      bscMainnet: BSCSCAN_API_KEY,
     },
     customChains: [
       {
@@ -76,22 +63,7 @@ module.exports = {
           browserURL: "https://sepolia.basescan.org",
         },
       },
-      {
-        network: "bscMainnet",
-        chainId: 56,
-        urls: {
-          apiURL: "https://api.bscscan.com/api",
-          browserURL: "https://bscscan.com",
-        },
-      },
-      {
-        network: "bscTestnet",
-        chainId: 97,
-        urls: {
-          apiURL: "https://api-testnet.bscscan.com/api",
-          browserURL: "https://testnet.bscscan.com",
-        },
-      },
+
     ],
   },
 
